@@ -1,7 +1,8 @@
 from typing import Tuple, Literal
+import queue
 import pygame as pg
 from config import *
-from helper import image_loader
+from helper import image_loader, MyList
 
 
 # a single pipe
@@ -131,7 +132,7 @@ class Pipes:
 
     Attributes:
         pipes_counter (int): 已經產生的水管對數
-        pipe_pairs (List[PipePair]): 所有在視窗中的水管對
+        pipe_pairs (MyList[PipePair]): 所有在視窗中的水管對
         pipes (pg.sprite.Group): 所有在視窗中的水管
     Methods:
         add_pipe(): 新增一對水管對(在視窗的最右方)
@@ -141,28 +142,34 @@ class Pipes:
 
     def __init__(self):
         self.pipes_counter = 0
-        self.pipe_pairs = []
+        self.pipe_pairs = MyList()
 
     @property
     def pipes(self):
         re = pg.sprite.Group()
-        for pipe_pair in self.pipe_pairs:
-            sprites = pipe_pair.pipes.sprites()
+        cursor = self.pipe_pairs.head
+        while cursor != None:
+            sprites = cursor.data.pipes.sprites()
             re.add(sprites[0]), re.add(sprites[1])
+            cursor = cursor.nxt
         return re
 
     def add_pipe(self):
         self.pipes_counter += 1
-        self.pipe_pairs.append(PipePair())
+        self.pipe_pairs.push_back(PipePair())
 
     def update(self):
         # 更新所有水管
-        for pipe_pair in self.pipe_pairs:
-            pipe_pair.update()
+        cursor = self.pipe_pairs.head
+        while cursor != None:
+            cursor.data.update()
+            cursor = cursor.nxt
 
         # 刪除已經超出螢幕的水管
-        while len(self.pipe_pairs) != 0 and not self.pipe_pairs[0].is_alive():
-            self.pipe_pairs.pop(0)
+        cursor = self.pipe_pairs.peek()
+        while cursor != None and not cursor.is_alive():
+            self.pipe_pairs.pop_top()
+            cursor = self.pipe_pairs.peek()
 
         # TODO3 決定何時新增水管
         """
@@ -170,11 +177,13 @@ class Pipes:
         呼叫self.add_pipe()即會新增一對水管對
         """
         # FIXME 取消下行的註解看看不做控制直接新增會發生什麼事
-        self.add_pipe()
+        # self.add_pipe()
 
     def draw(self, screen: pg.surface):
-        for pipe_pair in self.pipe_pairs:
-            pipe_pair.draw(screen)
+        cursor = self.pipe_pairs.head
+        while cursor != None:
+            cursor.data.draw(screen)
+            cursor = cursor.nxt
 
 
 # TODO8 過動的水管
